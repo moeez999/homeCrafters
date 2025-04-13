@@ -1,45 +1,51 @@
-const menuToggle = document.querySelector('.menu-toggle');
-const menu = document.querySelector('.menu');
+const menuToggle = document.querySelector(".menu-toggle");
+const menu = document.querySelector(".menu");
 let cartCount = 0;
 
-menuToggle.addEventListener('click', () => {
-  menu.classList.toggle('active');
+menuToggle.addEventListener("click", () => {
+  menu.classList.toggle("active");
 });
 
 // Cart functionality
-const cartElement = document.querySelector('.cart');
-const cartCountElement = document.querySelector('.cart-count');
+const cartElement = document.querySelector(".cart");
+const cartCountElement = document.querySelector(".cart-count");
 
-cartElement.addEventListener('click', () => {
+cartElement.addEventListener("click", () => {
   // You can add cart dropdown functionality here
-  console.log('Cart clicked');
+  console.log("Cart clicked");
 });
 
 // Enhanced product rendering with animations
 async function fetchProducts() {
   try {
-    const pathSegments = window.location.pathname.split("/"); 
+    const pathSegments = window.location.pathname.split("/");
     const fileName = pathSegments[pathSegments.length - 1];
     const hardwareValue = fileName.split(".")[0];
 
-    const response = await fetch('http://localhost:8000/api/products');
+    const response = await fetch("http://localhost:8000/api/products");
     if (!response.ok) {
-      throw new Error('Failed to fetch products');
+      throw new Error("Failed to fetch products");
     }
 
     const data = await response.json();
 
     if (data && data.data) {
-      const hardwareProducts = data?.data?.filter((x) => x.category === "hardware");
-      const electronicProducts = data?.data?.filter((x) => x.category === "electronic");
-      const sanitryProducts = data?.data?.filter((x) => x.category === "sanitry");
-      
+      const hardwareProducts = data?.data?.filter(
+        (x) => x.category === "hardware"
+      );
+      const electronicProducts = data?.data?.filter(
+        (x) => x.category === "electronic"
+      );
+      const sanitryProducts = data?.data?.filter(
+        (x) => x.category === "sanitry"
+      );
+
       renderProducts(hardwareProducts);
-      renderElectricProducts(electronicProducts); 
+      renderElectricProducts(electronicProducts);
       renderSanitryProducts(sanitryProducts);
     }
   } catch (error) {
-    console.error('Error fetching products:', error.message);
+    console.error("Error fetching products:", error.message);
     // Fallback to local data if API fails
     // renderProducts(hardwareProducts);
   }
@@ -55,17 +61,17 @@ function renderProducts(products) {
   products.forEach((product, index) => {
     const productCard = document.createElement("div");
     productCard.classList.add("product-card");
-    
+
     // Add animation delay for staggered entrance
     productCard.style.animationDelay = `${index * 0.1}s`;
-    
+
     // Generate random badge (sale, new, etc)
     const badges = ["Sale", "New", "Popular", "Limited"];
     const randomBadge = badges[Math.floor(Math.random() * badges.length)];
-    
+
     // Generate random rating (3-5 stars)
     const rating = Math.floor(Math.random() * 3) + 3;
-    
+
     productCard.innerHTML = `
       <div class="product-image">
         <span class="product-badge">${randomBadge}</span>
@@ -75,12 +81,16 @@ function renderProducts(products) {
         <h3 class="product-title">${product.name}</h3>
         <p class="product-description">${product.description}</p>
         <div class="product-rating">
-          ${'★'.repeat(rating)}${'☆'.repeat(5 - rating)}
+          ${"★".repeat(rating)}${"☆".repeat(5 - rating)}
         </div>
         <div class="product-price">
           <div>
             <span class="price">$${product.price}</span>
-            ${product.oldPrice ? `<span class="discount">$${product.oldPrice}</span>` : ''}
+            ${
+              product.oldPrice
+                ? `<span class="discount">$${product.oldPrice}</span>`
+                : ""
+            }
           </div>
           <button class="add-to-cart" data-id="${product.id}">
             <i class="fas fa-cart-plus"></i> Add
@@ -93,25 +103,45 @@ function renderProducts(products) {
   });
 
   // Add event listeners to all "Add to Cart" buttons
-  document.querySelectorAll('.add-to-cart').forEach(button => {
-    button.addEventListener('click', function() {
-      const productId = this.getAttribute('data-id');
+  document.querySelectorAll(".add-to-cart").forEach((button) => {
+    button.addEventListener("click", function () {
+      const productId = this.getAttribute("data-id");
       addToCart(productId);
     });
   });
 }
 
 // Cart functionality
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
 function addToCart(productId) {
-  cartCount++;
-  cartCountElement.textContent = cartCount;
-  
-  // Animate the cart icon
-  cartElement.classList.add('animate-cart');
-  setTimeout(() => {
-    cartElement.classList.remove('animate-cart');
-  }, 500);
-  
+  const allProducts = [...document.querySelectorAll(".add-to-cart")].map(
+    (btn) => {
+      const card = btn.closest(".product-card");
+      return {
+        id: btn.dataset.id,
+        name: card.querySelector(".product-title")?.textContent,
+        price: parseFloat(
+          card.querySelector(".price")?.textContent.replace("$", "")
+        ),
+        image: card.querySelector("img")?.src,
+        quantity: 1,
+      };
+    }
+  );
+
+  const productToAdd = allProducts.find((p) => p.id === productId);
+  const existing = cart.find((p) => p.id === productId);
+
+  if (existing) {
+    existing.quantity++;
+  } else if (productToAdd) {
+    cart.push(productToAdd);
+  }
+
+  localStorage.setItem("cart", JSON.stringify(cart));
+  updateCartUI();
+  animateCart();
   console.log(`Product ${productId} added to cart`);
 }
 
@@ -126,7 +156,7 @@ function renderElectricProducts(products) {
     const productCard = document.createElement("div");
     productCard.classList.add("product-card");
     productCard.style.animationDelay = `${index * 0.1}s`;
-    
+
     productCard.innerHTML = `
       <div class="product-image">
         <img src="${product.image}" alt="${product.name}" />
@@ -157,7 +187,7 @@ function renderSanitryProducts(products) {
     const productCard = document.createElement("div");
     productCard.classList.add("product-card");
     productCard.style.animationDelay = `${index * 0.1}s`;
-    
+
     productCard.innerHTML = `
       <div class="product-image">
         <img src="${product.image}" alt="${product.name}" />
@@ -179,20 +209,20 @@ function renderSanitryProducts(products) {
 }
 
 // Initialize when DOM is loaded
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
   fetchProducts();
-  
+
   // Add animation class to header
-  const header = document.querySelector('.hardh1');
+  const header = document.querySelector(".hardh1");
   if (header) {
     setTimeout(() => {
-      header.classList.add('animate-header');
+      header.classList.add("animate-header");
     }, 300);
   }
 });
 
 // Add CSS for cart animation
-const style = document.createElement('style');
+const style = document.createElement("style");
 style.textContent = `
   @keyframes cartBounce {
     0%, 100% { transform: scale(1); }
